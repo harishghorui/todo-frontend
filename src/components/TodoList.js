@@ -3,7 +3,7 @@ import styles from './TodoList.module.css';
 export default function TodoList({ todos, onTodoClick, selectedTodoId }) {
   return (
     <div className={styles.todoList}>
-      {todos.length === 0 ? (
+      {todos?.length === 0 ? (
         <div className={styles.emptyList}>No todos yet</div>
       ) : (
         todos.map((todo) => (
