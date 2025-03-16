@@ -1,0 +1,56 @@
+.todoDetail {
+  padding: 1rem;
+  position: relative;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.titleInput {
+  font-size: 1.5rem;
+  font-weight: 600;
+  border: none;
+  border-bottom: 1px solid #eaeaea;
+  padding: 0.5rem 0;
+  width: 70%;
+}
+
+.titleInput:focus {
+  outline: none;
+  border-bottom: 1px solid #0070f3;
+}
+
+.date {
+  color: #777;
+  font-size: 0.9rem;
+}
+
+.descriptionInput {
+  width: 100%;
+  height: 300px;
+  border: 1px solid #eaeaea;
+  border-radius: 4px;
+  padding: 0.5rem;
+  font-size: 1rem;
+  resize: vertical;
+}
+
+.descriptionInput:focus {
+  outline: none;
+  border: 1px solid #0070f3;
+}
+
+.savingIndicator {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  background-color: #f0f0f0;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #777;
+}

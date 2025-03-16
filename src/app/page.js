@@ -1,103 +1,152 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import TodoList from '@/components/TodoList';
+import TodoDetail from '@/components/TodoDetail';
+import styles from './page.module.css';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [todos, setTodos] = useState([]);
+  const [selectedTodo, setSelectedTodo] = useState(null);
+  const [page, setPage] = useState(1);
+  const [newTodoTitle, setNewTodoTitle] = useState('');
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  useEffect(() => {
+    fetchTodos();
+  }, [page]);
+
+  const fetchTodos = async () => {
+    try {
+      const response = await fetch(`/api/todos`);
+      const data = await response.json();
+      console.log("todos...", data);
+      
+      if (page === 1) {
+        setTodos(data.todos);
+      } else {
+        setTodos(prev => [...prev, ...data.todos]);
+      }
+    } catch (error) {
+      console.error('Error fetching todos:', error);
+    }
+  };
+
+  const createTodo = async () => {
+    if (!newTodoTitle.trim()) return;
+    
+    try {
+      const response = await fetch('/api/todos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: newTodoTitle,
+          description: '',
+          date: new Date().toISOString(),
+        }),
+      });
+      
+      if (response.ok) {
+        const newTodo = await response.json();
+        setTodos(prev => [newTodo, ...prev]);
+        setNewTodoTitle('');
+      }
+    } catch (error) {
+      console.error('Error creating todo:', error);
+    }
+  };
+
+  const updateTodo = async (updatedTodo) => {
+    try {
+      const response = await fetch(`/api/todos/${updatedTodo._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedTodo),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update todo");
+      }
+
+      const data = await response.json();
+
+      setTodos(prev => 
+        prev.map(todo => 
+          todo._id === updatedTodo._id ? data : todo
+        )
+      );
+      setSelectedTodo(data);
+    } catch (error) {
+      console.error("Error updating todo:", error);
+    }
+  };
+
+  const deleteTodo = async (todoId) => {
+    // const confirmDelete = window.confirm("Are you sure you want to delete this todo?");
+    // if (!confirmDelete) return;
+
+    try {
+      const response = await fetch(`/api/todos/${todoId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete todo");
+      }
+
+      setTodos(prev => prev.filter(todo => todo._id !== todoId));
+
+      // If the deleted todo was selected, remove it from the view
+      if (selectedTodo?._id === todoId) {
+        setSelectedTodo(null);
+      }
+    } catch (error) {
+      console.error("Error deleting todo:", error);
+    }
+  };
+
+  return (
+    <main className={styles.main}>
+      <div className={styles.container}>
+        <div className={styles.leftPane}>
+          <div className={styles.newTodoForm}>
+            <input
+              type="text"
+              value={newTodoTitle}
+              onChange={(e) => setNewTodoTitle(e.target.value)}
+              placeholder="Add a new todo..."
+              className={styles.newTodoInput}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <button onClick={createTodo} className={styles.addButton}>
+              Add Todo
+            </button>
+          </div>
+          
+          <TodoList 
+            todos={todos} 
+            onTodoClick={(todo) => setSelectedTodo(todo)}
+            selectedTodoId={selectedTodo?._id}
+          />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+        
+        <div className={styles.rightPane}>
+          {selectedTodo ? (
+            <TodoDetail 
+              todo={selectedTodo} 
+              onUpdate={updateTodo} 
+              onDelete={deleteTodo} 
+            />
+          ) : (
+            <div className={styles.noTodoSelected}>
+              Select a todo to view details
+            </div>
+          )}
+        </div>
+      </div>
+    </main>
   );
 }
